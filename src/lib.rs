@@ -27,7 +27,7 @@ struct kpep_db {
     plist_data: *mut c_void,           ///< Plist data (CFDataRef), currently NULL.
     event_map: *mut c_void, ///< All events (CFDict<CFSTR(event_name), kpep_event *>).
     event_arr: *mut kpep_event, ///< Event struct buffer (sizeof(kpep_event) * events_count).
-    fixed_event_arr: **mut kpep_event, ///< Fixed counter events (sizeof(kpep_event *)
+    fixed_event_arr: *mut *mut kpep_event, ///< Fixed counter events (sizeof(kpep_event *)
     ///< * fixed_counter_count)
     alias_map: *mut c_void, ///< All aliases (CFDict<CFSTR(event_name), kpep_event *>).
     reserved_1: size_t,
@@ -49,7 +49,7 @@ struct kpep_db {
 #[allow(non_camel_case_types)]
 struct kpep_config {
     db: *mut kpep_db,
-    ev_arr: **mut kpep_event, ///< (sizeof(kpep_event *) * counter_count), init NULL
+    ev_arr: *mut *mut kpep_event, ///< (sizeof(kpep_event *) * counter_count), init NULL
     ev_map: *mut size_t,       ///< (sizeof(size_t *) * counter_count), init 0
     ev_idx: *mut size_t,       ///< (sizeof(size_t *) * counter_count), init -1
     flags: *mut c_uint,          ///< (sizeof(c_uint *) * counter_count), init 0
@@ -103,7 +103,7 @@ extern "C" {
     fn kperf_tick_frequency() -> c_ulonglong;
 }
 
-#[link(name="kperf-data", kind="framework")]
+#[link(name="kperfdata", kind="framework")]
 extern "C" {
     /// Create a config.
     /// @param db A kpep db, see kpep_db_create()
@@ -122,7 +122,7 @@ extern "C" {
     ///            If return value is `CONFLICTING_EVENTS`, this bitmap contains
     ///            the conflicted event indices, e.g. "1 << 2" means index 2.
     /// @return kpep_config_error_code, 0 for success.
-    fn kpep_config_add_event (cfg: *mut kpep_config, ev_ptr: **mut kpep_event, flag: c_uint, err: *mut c_uint) -> c_int;
+    fn kpep_config_add_event (cfg: *mut kpep_config, ev_ptr: *mut *mut kpep_event, flag: c_uint, err: *mut c_uint) -> c_int;
 
     /// Remove event at index.
     /// @return kpep_config_error_code, 0 for success.
@@ -141,7 +141,7 @@ extern "C" {
     /// @param buf_size The buffer's size in bytes, should not smaller than
     ///                 kpep_config_events_count() * sizeof(void *).
     /// @return kpep_config_error_code, 0 for success.
-    fn kpep_config_events (cfg: *mut kpep_config, buf: **mut kpep_event, buf_size: size_t) -> c_int;
+    fn kpep_config_events (cfg: *mut kpep_config, buf: *mut *mut kpep_event, buf_size: size_t) -> c_int;
 
     /// Get kpc register configs.
     /// @param buf A buffer to receive kpc register configs.
@@ -170,14 +170,14 @@ extern "C" {
     /// @param name File name, for example "haswell", "cpu_100000c_1_92fb37c8".
     ///             Pass NULL for current CPU.
     /// @return kpep_config_error_code, 0 for success.
-    fn kpep_db_create (name: *const c_char, db_ptr: **mut kpep_db) -> c_int;
+    fn kpep_db_create (name: *const c_char, db_ptr: *mut *mut kpep_db) -> c_int;
 
     /// Free the kpep database.
     fn kpep_db_free (db: *mut kpep_db);
 
     /// Get the database's name.
     /// @return kpep_config_error_code, 0 for success.
-    fn kpep_db_name (db: *mut kpep_db, name: **const c_char) -> c_int;
+    fn kpep_db_name (db: *mut kpep_db, name: *const *mut c_char) -> c_int;
 
     /// Get the event alias count.
     /// @return kpep_config_error_code, 0 for success.
@@ -188,7 +188,7 @@ extern "C" {
     /// @param buf_size The buffer's size in bytes,
     ///        should not smaller than kpep_db_aliases_count() * sizeof(void *).
     /// @return kpep_config_error_code, 0 for success.
-    fn kpep_db_aliases (db: *mut kpep_db, buf: **const c_char, buf_size: size_t) -> c_int;
+    fn kpep_db_aliases (db: *mut kpep_db, buf: *const *mut c_char, buf_size: size_t) -> c_int;
 
     /// Get counters count for given classes.
     /// @param classes 1: Fixed, 2: Configurable.
@@ -204,23 +204,23 @@ extern "C" {
     /// @param buf_size The buffer's size in bytes,
     ///        should not smaller than kpep_db_events_count() * sizeof(void *).
     /// @return kpep_config_error_code, 0 for success.
-    fn kpep_db_events (db: *mut kpep_db, buf: **mut kpep_event, buf_size: size_t) -> c_int;
+    fn kpep_db_events (db: *mut kpep_db, buf: *mut *mut kpep_event, buf_size: size_t) -> c_int;
 
     /// Get one event by name.
     /// @return kpep_config_error_code, 0 for success.
-    fn kpep_db_event (db: *mut kpep_db, name: *const c_char, ev_ptr: **mut kpep_event) -> c_int;
+    fn kpep_db_event (db: *mut kpep_db, name: *const c_char, ev_ptr: *mut *mut kpep_event) -> c_int;
 
     /// Get event's name.
     /// @return kpep_config_error_code, 0 for success.
-    fn kpep_event_name (ev: *mut kpep_event, name_ptr: **const c_char) -> c_int;
+    fn kpep_event_name (ev: *mut kpep_event, name_ptr: *const *mut c_char) -> c_int;
 
     /// Get event's alias.
     /// @return kpep_config_error_code, 0 for success.
-    fn kpep_event_alias (ev: *mut kpep_event, alias_ptr: **const c_char) -> c_int;
+    fn kpep_event_alias (ev: *mut kpep_event, alias_ptr: *const *mut c_char) -> c_int;
 
     /// Get event's description.
     /// @return kpep_config_error_code, 0 for success.
-    fn kpep_event_description (ev: *mut kpep_event, str_ptr: **const c_char) -> c_int;
+    fn kpep_event_description (ev: *mut kpep_event, str_ptr: *const *mut c_char) -> c_int;
 }
 
 pub fn cpu_string() -> Option<Vec<u8>> {
@@ -241,6 +241,7 @@ pub fn cpu_string() -> Option<Vec<u8>> {
 
 #[cfg(test)]
 mod tests {
+    use std::ptr::{null, null_mut};
     use super::*;
     const LIBRARY_PATH: &str = "/System/Library/PrivateFrameworks/kperf.framework/kperf";
 
@@ -268,5 +269,17 @@ mod tests {
         // }
         assert_ne!(cpu_version, None, "CPU Version identifier cannot be null");
         assert_ne!(cpu_version.unwrap().len(), 0, "CPU Version identifier string cannot be of size 0");
+    }
+
+    #[test]
+    fn test_create_kpep_db() {
+        unsafe {
+            let mut db_ptr: *mut kpep_db = null_mut();
+            // let mut name: &[c_char; 12] = b"test_rust_db";
+            // let name = CStr::from_bytes_until_nul().unwrap();
+            // let name_ptr: *const c_char = name.as_ptr() as *const c_char;
+            let result = kpep_db_create(null(), &mut db_ptr);
+            println!("db creation result: {}", result);
+        }
     }
 }
