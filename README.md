@@ -1,3 +1,5 @@
+# Deprecated - Use rust-kperf instead: [github.com/El-Naizin/rust-kperf](https://github.com/El-Naizin/rust-kperf)
+
 # Kperf-rs
 
 Native rust bindings to the private macOS frameworks: kperf and kperfdata.
